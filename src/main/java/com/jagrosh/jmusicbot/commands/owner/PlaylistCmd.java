@@ -128,7 +128,7 @@ public class PlaylistCmd extends OwnerCommand
             this.name = "append";
             this.aliases = new String[]{"add"};
             this.help = "appends songs to an existing playlist";
-            this.arguments = "<name> <URL> | <URL> | ...";
+            this.arguments = "<name> <URL> | <URL> | …";
             this.guildOnly = false;
         }
 

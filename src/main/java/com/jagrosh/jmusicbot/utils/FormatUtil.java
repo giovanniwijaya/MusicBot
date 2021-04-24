@@ -66,7 +66,7 @@ public class FormatUtil {
         for(int i=0; i<9 && i<list.size(); i++)
             out+="\n - "+list.get(i).getName()+" (<#"+list.get(i).getId()+">)";
         if(list.size()>9)
-            out+="\n**And "+(list.size()-9)+" more...**";
+            out+="\n**And "+(list.size()-9)+" more…**";
         return out;
     }
     
@@ -76,7 +76,7 @@ public class FormatUtil {
         for(int i=0; i<9 && i<list.size(); i++)
             out+="\n - "+list.get(i).getName()+" (ID:"+list.get(i).getId()+")";
         if(list.size()>9)
-            out+="\n**And "+(list.size()-9)+" more...**";
+            out+="\n**And "+(list.size()-9)+" more…**";
         return out;
     }
     
@@ -86,7 +86,7 @@ public class FormatUtil {
         for(int i=0; i<9 && i<list.size(); i++)
             out+="\n - "+list.get(i).getName()+" (ID:"+list.get(i).getId()+")";
         if(list.size()>9)
-            out+="\n**And "+(list.size()-9)+" more...**";
+            out+="\n**And "+(list.size()-9)+" more…**";
         return out;
     }
     

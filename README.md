@@ -28,7 +28,7 @@ A cross-platform Discord music bot with a clean interface, and that is easy to s
   * Playlist support (both web/youtube, and local)
 
 ## Example
-![Loading Example...](https://i.imgur.com/kVtTKvS.gif)
+![Loading Example…](https://i.imgur.com/kVtTKvS.gif)
 
 ## Setup
 Please see the [Setup Page](https://github.com/jagrosh/MusicBot/wiki/Setup) in the wiki to run this bot yourself!
