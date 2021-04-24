@@ -63,30 +63,30 @@ public class FormatUtil {
     public static String listOfTChannels(List<TextChannel> list, String query)
     {
         String out = " Multiple text channels found matching \""+query+"\":";
-        for(int i=0; i<6 && i<list.size(); i++)
+        for(int i=0; i<9 && i<list.size(); i++)
             out+="\n - "+list.get(i).getName()+" (<#"+list.get(i).getId()+">)";
-        if(list.size()>6)
-            out+="\n**And "+(list.size()-6)+" more...**";
+        if(list.size()>9)
+            out+="\n**And "+(list.size()-9)+" more...**";
         return out;
     }
     
     public static String listOfVChannels(List<VoiceChannel> list, String query)
     {
         String out = " Multiple voice channels found matching \""+query+"\":";
-        for(int i=0; i<6 && i<list.size(); i++)
+        for(int i=0; i<9 && i<list.size(); i++)
             out+="\n - "+list.get(i).getName()+" (ID:"+list.get(i).getId()+")";
-        if(list.size()>6)
-            out+="\n**And "+(list.size()-6)+" more...**";
+        if(list.size()>9)
+            out+="\n**And "+(list.size()-9)+" more...**";
         return out;
     }
     
     public static String listOfRoles(List<Role> list, String query)
     {
         String out = " Multiple text channels found matching \""+query+"\":";
-        for(int i=0; i<6 && i<list.size(); i++)
+        for(int i=0; i<9 && i<list.size(); i++)
             out+="\n - "+list.get(i).getName()+" (ID:"+list.get(i).getId()+")";
-        if(list.size()>6)
-            out+="\n**And "+(list.size()-6)+" more...**";
+        if(list.size()>9)
+            out+="\n**And "+(list.size()-9)+" more...**";
         return out;
     }
     
