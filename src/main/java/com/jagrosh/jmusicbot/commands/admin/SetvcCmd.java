@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,40 +30,46 @@ import net.dv8tion.jda.api.entities.VoiceChannel;
  */
 public class SetvcCmd extends AdminCommand 
 {
-    public SetvcCmd(Bot bot)
-    {
-        this.name = "setvc";
-        this.help = "sets the voice channel for playing music";
-        this.arguments = "<channel|NONE>";
-        this.aliases = bot.getConfig().getAliases(this.name);
-    }
-    
-    @Override
-    protected void execute(CommandEvent event) 
-    {
-        if(event.getArgs().isEmpty())
-        {
-            event.reply(event.getClient().getError()+" Please include a voice channel or NONE");
-            return;
-        }
-        Settings s = event.getClient().getSettingsFor(event.getGuild());
-        if(event.getArgs().equalsIgnoreCase("none"))
-        {
-            s.setVoiceChannel(null);
-            event.reply(event.getClient().getSuccess()+" Music can now be played in any channel");
-        }
-        else
-        {
-            List<VoiceChannel> list = FinderUtil.findVoiceChannels(event.getArgs(), event.getGuild());
-            if(list.isEmpty())
-                event.reply(event.getClient().getWarning()+" No Voice Channels found matching \""+event.getArgs()+"\"");
-            else if (list.size()>1)
-                event.reply(event.getClient().getWarning()+FormatUtil.listOfVChannels(list, event.getArgs()));
-            else
-            {
-                s.setVoiceChannel(list.get(0));
-                event.reply(event.getClient().getSuccess()+" Music can now only be played in "+list.get(0).getAsMention());
-            }
-        }
-    }
+	public SetvcCmd(Bot bot)
+	{
+		this.name = "setvc";
+		this.help = "sets the voice channel for playing music";
+		this.arguments = "<channel|NONE>";
+		this.aliases = bot.getConfig().getAliases(this.name);
+	}
+
+	@Override
+	protected void execute(CommandEvent event) 
+	{
+		Settings s = event.getClient().getSettingsFor(event.getGuild());
+		if(event.getArgs().isEmpty())
+		{
+			if(s.getVoiceChannel(event.getGuild()) == null)
+			{
+				event.replySuccess("Music can currently be played in any channel");
+			}
+			else
+			{
+				event.replySuccess("Music can currently only be played in "+s.getVoiceChannel(event.getGuild()).getAsMention());
+			}
+		}
+		else if(event.getArgs().equalsIgnoreCase("none"))
+		{
+			s.setVoiceChannel(null);
+			event.replySuccess("Music can now be played in any channel");
+		}
+		else
+		{
+			List<VoiceChannel> list = FinderUtil.findVoiceChannels(event.getArgs(), event.getGuild());
+			if(list.isEmpty())
+				event.replyWarning("No Voice Channels found matching \""+event.getArgs()+"\"");
+			else if (list.size()>1)
+				event.replyWarning(FormatUtil.listOfVChannels(list, event.getArgs()));
+			else
+			{
+				s.setVoiceChannel(list.get(0));
+				event.replySuccess("Music can now only be played in "+list.get(0).getAsMention());
+			}
+		}
+	}
 }

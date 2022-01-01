@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,26 +21,26 @@ package com.jagrosh.jmusicbot.settings;
  */
 public enum RepeatMode
 {
-    OFF(null, "Off"),
-    ALL("\uD83D\uDD01", "All"), // 🔁
-    SINGLE("\uD83D\uDD02", "Single"); // 🔂
+	OFF(null, "Off"),
+	ALL("\uD83D\uDD01", "All"), // 🔁
+	SINGLE("\uD83D\uDD02", "Single"); // 🔂
 
-    private final String emoji;
-    private final String userFriendlyName;
+	private final String emoji;
+	private final String userFriendlyName;
 
-    private RepeatMode(String emoji, String userFriendlyName)
-    {
-        this.emoji = emoji;
-        this.userFriendlyName = userFriendlyName;
-    }
+	private RepeatMode(String emoji, String userFriendlyName)
+	{
+		this.emoji = emoji;
+		this.userFriendlyName = userFriendlyName;
+	}
 
-    public String getEmoji()
-    {
-        return emoji;
-    }
+	public String getEmoji()
+	{
+		return emoji;
+	}
 
-    public String getUserFriendlyName()
-    {
-        return userFriendlyName;
-    }
+	public String getUserFriendlyName()
+	{
+		return userFriendlyName;
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 John Grosh <john.a.grosh@gmail.com>.
+ * Copyright 2021 John Grosh <john.a.grosh@gmail.com>.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,43 +22,42 @@ import com.jagrosh.jmusicbot.settings.Settings;
 
 /**
  *
- * @author John Grosh (john.a.grosh@gmail.com)
+ * @author Brian Kendall
  */
-public class PrefixCmd extends AdminCommand
+public class FairqueueCmd extends AdminCommand
 {
-	public PrefixCmd(Bot bot)
+	public FairqueueCmd(Bot bot)
 	{
-		this.name = "prefix";
-		this.help = "sets a server-specific prefix";
-		this.arguments = "<prefix|NONE>";
+		this.name = "fairqueue";
+		this.help = "turns fair queue on or off";
+		this.arguments = "[off|on]";
 		this.aliases = bot.getConfig().getAliases(this.name);
 	}
 
 	@Override
 	protected void execute(CommandEvent event) 
 	{
-		Settings s = event.getClient().getSettingsFor(event.getGuild());
-		if(event.getArgs().isEmpty())
+		String args = event.getArgs();
+		boolean value = true;
+		Settings settings = event.getClient().getSettingsFor(event.getGuild());
+		if(args.isEmpty())
 		{
-			if(s.getPrefix() == null)
-			{
-				event.replySuccess("Custom prefix is currently unset");
-			}
-			else
-			{
-				event.replySuccess("Custom prefix is currently set to `" + s.getPrefix() + "` on *" + event.getGuild().getName() + "*");
-			}
+			value = !settings.getUseFairQueue();
 		}
-
-		else if(event.getArgs().equalsIgnoreCase("none"))
+		else if(args.equalsIgnoreCase("false") || args.equalsIgnoreCase("off") || args.equalsIgnoreCase("disable"))
 		{
-			s.setPrefix(null);
-			event.replySuccess("Prefix cleared.");
+			value = false;
+		}
+		else if(args.equalsIgnoreCase("true") || args.equalsIgnoreCase("on") || args.equalsIgnoreCase("enable"))
+		{
+			value = true;
 		}
 		else
 		{
-			s.setPrefix(event.getArgs());
-			event.replySuccess("Custom prefix set to `" + event.getArgs() + "` on *" + event.getGuild().getName() + "*");
+			event.replyError("Valid options are `off` or `on` (or leave empty to toggle between `off` and `on`)");
+			return;
 		}
+		settings.setUseFairQueue(value);
+		event.replySuccess("Fair queue is now `"+(value ? "enabled" : "disabled")+"`");
 	}
 }

@@ -9,27 +9,27 @@ DOWNLOAD=true
 LOOP=true
 
 download() {
-    if [ $DOWNLOAD == true ]; then
-        URL=$(curl -s https://api.github.com/repos/jagrosh/MusicBot/releases/latest \
-           | grep -i browser_download_url.*\.jar \
-           | sed 's/.*\(http.*\)"/\1/')
-        FILENAME=$(echo $URL | sed 's/.*\/\([^\/]*\)/\1/')
-        if [ -f $FILENAME ]; then
-            echo "Latest version already downloaded (${FILENAME})"
-        else
-            curl -L $URL -o $FILENAME
-        fi
-    fi
+	if [ $DOWNLOAD == true ]; then
+		URL=$(curl -s https://api.github.com/repos/giovanniwijaya/MusicBot/releases/latest \
+		   | grep -i browser_download_url.*\.jar \
+		   | sed 's/.*\(http.*\)"/\1/')
+		FILENAME=$(echo $URL | sed 's/.*\/\([^\/]*\)/\1/')
+		if [ -f $FILENAME ]; then
+			echo "Latest version already downloaded (${FILENAME})"
+		else
+			curl -L $URL -o $FILENAME
+		fi
+	fi
 }
 
 run() {
-    java -Dnogui=true -jar $(ls -t JMusicBot* | head -1)
+	java -Dnogui=true -jar $(ls -t JMusicBot* | head -1)
 }
 
 while
-    download
-    run
-    $LOOP
+	download
+	run
+	$LOOP
 do
-    continue
-done 
+	continue
+done

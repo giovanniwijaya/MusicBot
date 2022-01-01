@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,23 +27,23 @@ import javax.swing.JTextArea;
  * @author John Grosh <john.a.grosh@gmail.com>
  */
 public class ConsolePanel extends JPanel {
-    
-    public ConsolePanel()
-    {
-        super();
-        JTextArea text = new JTextArea();
-        text.setLineWrap(true);
-        text.setWrapStyleWord(true);
-        text.setEditable(false);
-        PrintStream con=new PrintStream(new TextAreaOutputStream(text));
-        System.setOut(con);
-        System.setErr(con);
-        
-        JScrollPane pane = new JScrollPane();
-        pane.setViewportView(text);
-        
-        super.setLayout(new GridLayout(1,1));
-        super.add(pane);
-        super.setPreferredSize(new Dimension(400,300));
-    }
+
+	public ConsolePanel()
+	{
+		super();
+		JTextArea text = new JTextArea();
+		text.setLineWrap(true);
+		text.setWrapStyleWord(true);
+		text.setEditable(false);
+		PrintStream con=new PrintStream(new TextAreaOutputStream(text));
+		System.setOut(con);
+		System.setErr(con);
+
+		JScrollPane pane = new JScrollPane();
+		pane.setViewportView(text);
+
+		super.setLayout(new GridLayout(1,1));
+		super.add(pane);
+		super.setPreferredSize(new Dimension(400,300));
+	}
 }

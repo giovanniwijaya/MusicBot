@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,67 +32,67 @@ import java.util.concurrent.TimeUnit;
  */
 public class AloneInVoiceHandler
 {
-    private final Bot bot;
-    private final HashMap<Long, Instant> aloneSince = new HashMap<>();
-    private long aloneTimeUntilStop = 0;
+	private final Bot bot;
+	private final HashMap<Long, Instant> aloneSince = new HashMap<>();
+	private long aloneTimeUntilStop = 0;
 
-    public AloneInVoiceHandler(Bot bot)
-    {
-        this.bot = bot;
-    }
-    
-    public void init()
-    {
-        aloneTimeUntilStop = bot.getConfig().getAloneTimeUntilStop();
-        if(aloneTimeUntilStop > 0)
-            bot.getThreadpool().scheduleWithFixedDelay(() -> check(), 0, 5, TimeUnit.SECONDS);
-    }
-    
-    private void check()
-    {
-        Set<Long> toRemove = new HashSet<>();
-        for(Map.Entry<Long, Instant> entrySet: aloneSince.entrySet())
-        {
-            if(entrySet.getValue().getEpochSecond() > Instant.now().getEpochSecond() - aloneTimeUntilStop) continue;
+	public AloneInVoiceHandler(Bot bot)
+	{
+		this.bot = bot;
+	}
 
-            Guild guild = bot.getJDA().getGuildById(entrySet.getKey());
+	public void init()
+	{
+		aloneTimeUntilStop = bot.getConfig().getAloneTimeUntilStop();
+		if(aloneTimeUntilStop > 0)
+			bot.getThreadpool().scheduleWithFixedDelay(() -> check(), 0, 5, TimeUnit.SECONDS);
+	}
 
-            if(guild == null)
-            {
-                toRemove.add(entrySet.getKey());
-                continue;
-            }
+	private void check()
+	{
+		Set<Long> toRemove = new HashSet<>();
+		for(Map.Entry<Long, Instant> entrySet: aloneSince.entrySet())
+		{
+			if(entrySet.getValue().getEpochSecond() > Instant.now().getEpochSecond() - aloneTimeUntilStop) continue;
 
-            ((AudioHandler) guild.getAudioManager().getSendingHandler()).stopAndClear();
-            guild.getAudioManager().closeAudioConnection();
+			Guild guild = bot.getJDA().getGuildById(entrySet.getKey());
 
-            toRemove.add(entrySet.getKey());
-        }
-        toRemove.forEach(id -> aloneSince.remove(id));
-    }
+			if(guild == null)
+			{
+				toRemove.add(entrySet.getKey());
+				continue;
+			}
 
-    public void onVoiceUpdate(GuildVoiceUpdateEvent event)
-    {
-        if(aloneTimeUntilStop <= 0) return;
+			((AudioHandler) guild.getAudioManager().getSendingHandler()).stopAndClear();
+			guild.getAudioManager().closeAudioConnection();
 
-        Guild guild = event.getEntity().getGuild();
-        if(!bot.getPlayerManager().hasHandler(guild)) return;
+			toRemove.add(entrySet.getKey());
+		}
+		toRemove.forEach(id -> aloneSince.remove(id));
+	}
 
-        boolean alone = isAlone(guild);
-        boolean inList = aloneSince.containsKey(guild.getIdLong());
+	public void onVoiceUpdate(GuildVoiceUpdateEvent event)
+	{
+		if(aloneTimeUntilStop <= 0) return;
 
-        if(!alone && inList)
-            aloneSince.remove(guild.getIdLong());
-        else if(alone && !inList)
-            aloneSince.put(guild.getIdLong(), Instant.now());
-    }
+		Guild guild = event.getEntity().getGuild();
+		if(!bot.getPlayerManager().hasHandler(guild)) return;
 
-    private boolean isAlone(Guild guild)
-    {
-        if(guild.getAudioManager().getConnectedChannel() == null) return false;
-        return guild.getAudioManager().getConnectedChannel().getMembers().stream()
-                .noneMatch(x ->
-                        !x.getVoiceState().isDeafened()
-                        && !x.getUser().isBot());
-    }
+		boolean alone = isAlone(guild);
+		boolean inList = aloneSince.containsKey(guild.getIdLong());
+
+		if(!alone && inList)
+			aloneSince.remove(guild.getIdLong());
+		else if(alone && !inList)
+			aloneSince.put(guild.getIdLong(), Instant.now());
+	}
+
+	private boolean isAlone(Guild guild)
+	{
+		if(guild.getAudioManager().getConnectedChannel() == null) return false;
+		return guild.getAudioManager().getConnectedChannel().getMembers().stream()
+				.noneMatch(x ->
+						!x.getVoiceState().isDeafened()
+						&& !x.getUser().isBot());
+	}
 }

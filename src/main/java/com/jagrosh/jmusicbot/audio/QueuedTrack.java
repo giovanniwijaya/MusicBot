@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@ package com.jagrosh.jmusicbot.audio;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.jagrosh.jmusicbot.queue.Queueable;
-import com.jagrosh.jmusicbot.utils.FormatUtil;
+import com.jagrosh.jmusicbot.utils.TimeUtil;
 import net.dv8tion.jda.api.entities.User;
 
 /**
@@ -26,33 +26,33 @@ import net.dv8tion.jda.api.entities.User;
  */
 public class QueuedTrack implements Queueable
 {
-    private final AudioTrack track;
-    
-    public QueuedTrack(AudioTrack track, User owner)
-    {
-        this(track, new RequestMetadata(owner));
-    }
-    
-    public QueuedTrack(AudioTrack track, RequestMetadata rm)
-    {
-        this.track = track;
-        this.track.setUserData(rm);
-    }
-    
-    @Override
-    public long getIdentifier() 
-    {
-        return track.getUserData(RequestMetadata.class).getOwner();
-    }
-    
-    public AudioTrack getTrack()
-    {
-        return track;
-    }
+	private final AudioTrack track;
 
-    @Override
-    public String toString() 
-    {
-        return "`[" + FormatUtil.formatTime(track.getDuration()) + "]` [**" + track.getInfo().title + "**]("+track.getInfo().uri+") - <@" + track.getUserData(RequestMetadata.class).getOwner() + ">";
-    }
+	public QueuedTrack(AudioTrack track, User owner)
+	{
+		this(track, new RequestMetadata(owner));
+	}
+
+	public QueuedTrack(AudioTrack track, RequestMetadata rm)
+	{
+		this.track = track;
+		this.track.setUserData(rm);
+	}
+
+	@Override
+	public long getIdentifier() 
+	{
+		return track.getUserData(RequestMetadata.class).getOwner();
+	}
+
+	public AudioTrack getTrack()
+	{
+		return track;
+	}
+
+	@Override
+	public String toString() 
+	{
+		return "`[" + TimeUtil.formatTime(track.getDuration()) + "]` [**" + track.getInfo().title + "**]("+track.getInfo().uri+") - <@" + track.getUserData(RequestMetadata.class).getOwner() + ">";
+	}
 }

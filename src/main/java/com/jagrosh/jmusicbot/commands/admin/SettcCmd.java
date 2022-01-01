@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,41 +30,47 @@ import net.dv8tion.jda.api.entities.TextChannel;
  */
 public class SettcCmd extends AdminCommand 
 {
-    public SettcCmd(Bot bot)
-    {
-        this.name = "settc";
-        this.help = "sets the text channel for music commands";
-        this.arguments = "<channel|NONE>";
-        this.aliases = bot.getConfig().getAliases(this.name);
-    }
-    
-    @Override
-    protected void execute(CommandEvent event) 
-    {
-        if(event.getArgs().isEmpty())
-        {
-            event.reply(event.getClient().getError()+" Please include a text channel or NONE");
-            return;
-        }
-        Settings s = event.getClient().getSettingsFor(event.getGuild());
-        if(event.getArgs().equalsIgnoreCase("none"))
-        {
-            s.setTextChannel(null);
-            event.reply(event.getClient().getSuccess()+" Music commands can now be used in any channel");
-        }
-        else
-        {
-            List<TextChannel> list = FinderUtil.findTextChannels(event.getArgs(), event.getGuild());
-            if(list.isEmpty())
-                event.reply(event.getClient().getWarning()+" No Text Channels found matching \""+event.getArgs()+"\"");
-            else if (list.size()>1)
-                event.reply(event.getClient().getWarning()+FormatUtil.listOfTChannels(list, event.getArgs()));
-            else
-            {
-                s.setTextChannel(list.get(0));
-                event.reply(event.getClient().getSuccess()+" Music commands can now only be used in <#"+list.get(0).getId()+">");
-            }
-        }
-    }
-    
+	public SettcCmd(Bot bot)
+	{
+		this.name = "settc";
+		this.help = "sets the text channel for music commands";
+		this.arguments = "<channel|NONE>";
+		this.aliases = bot.getConfig().getAliases(this.name);
+	}
+
+	@Override
+	protected void execute(CommandEvent event) 
+	{
+		Settings s = event.getClient().getSettingsFor(event.getGuild());
+		if(event.getArgs().isEmpty())
+		{
+			if(s.getTextChannel(event.getGuild()) == null)
+			{
+				event.replySuccess("Music commands can currently be used in any channel");
+			}
+			else
+			{
+				event.replySuccess("Music commands can currently only be used in "+s.getTextChannel(event.getGuild()).getAsMention());
+			}
+		}
+		else if(event.getArgs().equalsIgnoreCase("none"))
+		{
+			s.setTextChannel(null);
+			event.replySuccess("Music commands can now be used in any channel");
+		}
+		else
+		{
+			List<TextChannel> list = FinderUtil.findTextChannels(event.getArgs(), event.getGuild());
+			if(list.isEmpty())
+				event.replyWarning("No Text Channels found matching \""+event.getArgs()+"\"");
+			else if (list.size()>1)
+				event.replyWarning(FormatUtil.listOfTChannels(list, event.getArgs()));
+			else
+			{
+				s.setTextChannel(list.get(0));
+				event.replySuccess("Music commands can now only be used in "+list.get(0).getAsMention());
+			}
+		}
+	}
+
 }

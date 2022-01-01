@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,38 +26,37 @@ import com.jagrosh.jmusicbot.commands.MusicCommand;
  */
 public class PlaylistsCmd extends MusicCommand 
 {
-    public PlaylistsCmd(Bot bot)
-    {
-        super(bot);
-        this.name = "playlists";
-        this.help = "shows the available playlists";
-        this.aliases = bot.getConfig().getAliases(this.name);
-        this.guildOnly = true;
-        this.beListening = false;
-        this.beListening = false;
-    }
-    
-    @Override
-    public void doCommand(CommandEvent event) 
-    {
-        if(!bot.getPlaylistLoader().folderExists())
-            bot.getPlaylistLoader().createFolder();
-        if(!bot.getPlaylistLoader().folderExists())
-        {
-            event.reply(event.getClient().getWarning()+" Playlists folder does not exist and could not be created!");
-            return;
-        }
-        List<String> list = bot.getPlaylistLoader().getPlaylistNames();
-        if(list==null)
-            event.reply(event.getClient().getError()+" Failed to load available playlists!");
-        else if(list.isEmpty())
-            event.reply(event.getClient().getWarning()+" There are no playlists in the Playlists folder!");
-        else
-        {
-            StringBuilder builder = new StringBuilder(event.getClient().getSuccess()+" Available playlists:\n");
-            list.forEach(str -> builder.append("`").append(str).append("` "));
-            builder.append("\nType `").append(event.getClient().getTextualPrefix()).append("play playlist <name>` to play a playlist");
-            event.reply(builder.toString());
-        }
-    }
+	public PlaylistsCmd(Bot bot)
+	{
+		super(bot);
+		this.name = "playlists";
+		this.help = "shows the available playlists";
+		this.aliases = bot.getConfig().getAliases(this.name);
+		this.guildOnly = true;
+		this.beListening = false;
+	}
+
+	@Override
+	public void doCommand(CommandEvent event) 
+	{
+		if(!bot.getPlaylistLoader().folderExists())
+			bot.getPlaylistLoader().createFolder();
+		if(!bot.getPlaylistLoader().folderExists())
+		{
+			event.replyWarning("Playlists folder does not exist and could not be created!");
+			return;
+		}
+		List<String> list = bot.getPlaylistLoader().getPlaylistNames();
+		if(list==null)
+			event.replyError("Failed to load available playlists!");
+		else if(list.isEmpty())
+			event.replyWarning("There are no playlists in the Playlists folder!");
+		else
+		{
+			StringBuilder builder = new StringBuilder(event.getClient().getSuccess()+" Available playlists:\n");
+			list.forEach(str -> builder.append("`").append(str).append("` "));
+			builder.append("\nType `").append(event.getClient().getTextualPrefix()).append("play playlist <name>` to play a playlist");
+			event.reply(builder.toString());
+		}
+	}
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *	  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,7 @@ import java.util.Set;
 import com.jagrosh.jmusicbot.queue.FairQueue;
 import com.jagrosh.jmusicbot.settings.Settings;
 import com.jagrosh.jmusicbot.utils.FormatUtil;
+import com.jagrosh.jmusicbot.utils.TimeUtil;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioTrack;
 import java.nio.ByteBuffer;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -46,277 +47,280 @@ import net.dv8tion.jda.api.entities.User;
  */
 public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
 {
-    private final FairQueue<QueuedTrack> queue = new FairQueue<>();
-    private final List<AudioTrack> defaultQueue = new LinkedList<>();
-    private final Set<String> votes = new HashSet<>();
-    
-    private final PlayerManager manager;
-    private final AudioPlayer audioPlayer;
-    private final long guildId;
-    
-    private AudioFrame lastFrame;
+	private final FairQueue<QueuedTrack> queue = new FairQueue<>();
+	private final List<AudioTrack> defaultQueue = new LinkedList<>();
+	private final Set<String> votes = new HashSet<>();
 
-    protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player)
-    {
-        this.manager = manager;
-        this.audioPlayer = player;
-        this.guildId = guild.getIdLong();
-    }
+	private final PlayerManager manager;
+	private final AudioPlayer audioPlayer;
+	private final long guildId;
 
-    public int addTrackToFront(QueuedTrack qtrack)
-    {
-        if(audioPlayer.getPlayingTrack()==null)
-        {
-            audioPlayer.playTrack(qtrack.getTrack());
-            return -1;
-        }
-        else
-        {
-            queue.addAt(0, qtrack);
-            return 0;
-        }
-    }
-    
-    public int addTrack(QueuedTrack qtrack)
-    {
-        if(audioPlayer.getPlayingTrack()==null)
-        {
-            audioPlayer.playTrack(qtrack.getTrack());
-            return -1;
-        }
-        else
-            return queue.add(qtrack);
-    }
-    
-    public FairQueue<QueuedTrack> getQueue()
-    {
-        return queue;
-    }
-    
-    public void stopAndClear()
-    {
-        queue.clear();
-        defaultQueue.clear();
-        audioPlayer.stopTrack();
-        //current = null;
-    }
-    
-    public boolean isMusicPlaying(JDA jda)
-    {
-        return guild(jda).getSelfMember().getVoiceState().inVoiceChannel() && audioPlayer.getPlayingTrack()!=null;
-    }
-    
-    public Set<String> getVotes()
-    {
-        return votes;
-    }
-    
-    public AudioPlayer getPlayer()
-    {
-        return audioPlayer;
-    }
-    
-    public RequestMetadata getRequestMetadata()
-    {
-        if(audioPlayer.getPlayingTrack() == null)
-            return RequestMetadata.EMPTY;
-        RequestMetadata rm = audioPlayer.getPlayingTrack().getUserData(RequestMetadata.class);
-        return rm == null ? RequestMetadata.EMPTY : rm;
-    }
-    
-    public boolean playFromDefault()
-    {
-        if(!defaultQueue.isEmpty())
-        {
-            audioPlayer.playTrack(defaultQueue.remove(0));
-            return true;
-        }
-        Settings settings = manager.getBot().getSettingsManager().getSettings(guildId);
-        if(settings==null || settings.getDefaultPlaylist()==null)
-            return false;
-        
-        Playlist pl = manager.getBot().getPlaylistLoader().getPlaylist(settings.getDefaultPlaylist());
-        if(pl==null || pl.getItems().isEmpty())
-            return false;
-        pl.loadTracks(manager, (at) -> 
-        {
-            if(audioPlayer.getPlayingTrack()==null)
-                audioPlayer.playTrack(at);
-            else
-                defaultQueue.add(at);
-        }, () -> 
-        {
-            if(pl.getTracks().isEmpty() && !manager.getBot().getConfig().getStay())
-                manager.getBot().closeAudioConnection(guildId);
-        });
-        return true;
-    }
-    
-    // Audio Events
-    @Override
-    public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) 
-    {
-        RepeatMode repeatMode = manager.getBot().getSettingsManager().getSettings(guildId).getRepeatMode();
-        // if the track ended normally, and we're in repeat mode, re-add it to the queue
-        if(endReason==AudioTrackEndReason.FINISHED && repeatMode != RepeatMode.OFF)
-        {
-            QueuedTrack clone = new QueuedTrack(track.makeClone(), track.getUserData(RequestMetadata.class));
-            if(repeatMode == RepeatMode.ALL)
-                queue.add(clone);
-            else
-                queue.addAt(0, clone);
-        }
-        
-        if(queue.isEmpty())
-        {
-            if(!playFromDefault())
-            {
-                manager.getBot().getNowplayingHandler().onTrackUpdate(guildId, null, this);
-                if(!manager.getBot().getConfig().getStay())
-                    manager.getBot().closeAudioConnection(guildId);
-                // unpause, in the case when the player was paused and the track has been skipped.
-                // this is to prevent the player being paused next time it's being used.
-                player.setPaused(false);
-            }
-        }
-        else
-        {
-            QueuedTrack qt = queue.pull();
-            player.playTrack(qt.getTrack());
-        }
-    }
+	private AudioFrame lastFrame;
 
-    @Override
-    public void onTrackStart(AudioPlayer player, AudioTrack track) 
-    {
-        votes.clear();
-        manager.getBot().getNowplayingHandler().onTrackUpdate(guildId, track, this);
-    }
+	protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player)
+	{
+		this.manager = manager;
+		this.audioPlayer = player;
+		this.guildId = guild.getIdLong();
+	}
 
-    
-    // Formatting
-    public Message getNowPlaying(JDA jda)
-    {
-        if(isMusicPlaying(jda))
-        {
-            Guild guild = guild(jda);
-            AudioTrack track = audioPlayer.getPlayingTrack();
-            MessageBuilder mb = new MessageBuilder();
-            mb.append(FormatUtil.filter(manager.getBot().getConfig().getSuccess()+" **Now Playing in "+guild.getSelfMember().getVoiceState().getChannel().getAsMention()+"...**"));
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setColor(guild.getSelfMember().getColor());
-            RequestMetadata rm = getRequestMetadata();
-            if(rm.getOwner() != 0L)
-            {
-                User u = guild.getJDA().getUserById(rm.user.id);
-                if(u==null)
-                    eb.setAuthor(rm.user.username + "#" + rm.user.discrim, null, rm.user.avatar);
-                else
-                    eb.setAuthor(u.getName() + "#" + u.getDiscriminator(), null, u.getEffectiveAvatarUrl());
-            }
+	public int addTrackToFront(QueuedTrack qtrack)
+	{
+		if(audioPlayer.getPlayingTrack()==null)
+		{
+			audioPlayer.playTrack(qtrack.getTrack());
+			return -1;
+		}
+		else
+		{
+			queue.addAt(0, qtrack);
+			return 0;
+		}
+	}
 
-            try 
-            {
-                eb.setTitle(track.getInfo().title, track.getInfo().uri);
-            }
-            catch(Exception e) 
-            {
-                eb.setTitle(track.getInfo().title);
-            }
+	public int addTrack(QueuedTrack qtrack)
+	{
+		if(audioPlayer.getPlayingTrack()==null)
+		{
+			audioPlayer.playTrack(qtrack.getTrack());
+			return -1;
+		}
+		else
+		{
+			Settings settings = manager.getBot().getSettingsManager().getSettings(guildId);
 
-            if(track instanceof YoutubeAudioTrack && manager.getBot().getConfig().useNPImages())
-            {
-                eb.setThumbnail("https://img.youtube.com/vi/"+track.getIdentifier()+"/mqdefault.jpg");
-            }
-            
-            if(track.getInfo().author != null && !track.getInfo().author.isEmpty())
-                eb.setFooter("Source: " + track.getInfo().author, null);
+			if (settings.getUseFairQueue())
+				return queue.add(qtrack);
+			else
+			{
+				queue.append(qtrack);
+				return queue.size()-1;
+			}
+		}
+	}
 
-            double progress = (double)audioPlayer.getPlayingTrack().getPosition()/track.getDuration();
-            eb.setDescription((audioPlayer.isPaused() ? JMusicBot.PAUSE_EMOJI : JMusicBot.PLAY_EMOJI)
-                    + " "+FormatUtil.progressBar(progress)
-                    + " `[" + FormatUtil.formatTime(track.getPosition()) + "/" + FormatUtil.formatTime(track.getDuration()) + "]` "
-                    + FormatUtil.volumeIcon(audioPlayer.getVolume()));
-            
-            return mb.setEmbed(eb.build()).build();
-        }
-        else return null;
-    }
-    
-    public Message getNoMusicPlaying(JDA jda)
-    {
-        Guild guild = guild(jda);
-        return new MessageBuilder()
-                .setContent(FormatUtil.filter(manager.getBot().getConfig().getSuccess()+" **Now Playing...**"))
-                .setEmbed(new EmbedBuilder()
-                .setTitle("No music playing")
-                .setDescription(JMusicBot.STOP_EMOJI+" "+FormatUtil.progressBar(-1)+" "+FormatUtil.volumeIcon(audioPlayer.getVolume()))
-                .setColor(guild.getSelfMember().getColor())
-                .build()).build();
-    }
-    
-    public String getTopicFormat(JDA jda)
-    {
-        if(isMusicPlaying(jda))
-        {
-            long userid = getRequestMetadata().getOwner();
-            AudioTrack track = audioPlayer.getPlayingTrack();
-            String title = track.getInfo().title;
-            if(title==null || title.equals("Unknown Title"))
-                title = track.getInfo().uri;
-            return "**"+title+"** ["+(userid==0 ? "autoplay" : "<@"+userid+">")+"]"
-                    + "\n" + (audioPlayer.isPaused() ? JMusicBot.PAUSE_EMOJI : JMusicBot.PLAY_EMOJI) + " "
-                    + "[" + FormatUtil.formatTime(track.getDuration()) + "] "
-                    + FormatUtil.volumeIcon(audioPlayer.getVolume());
-        }
-        else return "No music playing " + JMusicBot.STOP_EMOJI + " " + FormatUtil.volumeIcon(audioPlayer.getVolume());
-    }
-    
-    // Audio Send Handler methods
-    /*@Override
-    public boolean canProvide() 
-    {
-        if (lastFrame == null)
-            lastFrame = audioPlayer.provide();
+	public void addTrackIfRepeat(AudioTrack track)
+	{
+		RepeatMode repeatMode = manager.getBot().getSettingsManager().getSettings(guildId).getRepeatMode();
+		QueuedTrack clone = new QueuedTrack(track.makeClone(), track.getUserData(RequestMetadata.class));
+		if(repeatMode == RepeatMode.ALL)
+			queue.add(clone);
+		else if(repeatMode == RepeatMode.SINGLE)
+			queue.addAt(0, clone);
+	}
 
-        return lastFrame != null;
-    }
+	public FairQueue<QueuedTrack> getQueue()
+	{
+		return queue;
+	}
 
-    @Override
-    public byte[] provide20MsAudio() 
-    {
-        if (lastFrame == null) 
-            lastFrame = audioPlayer.provide();
+	public void stopAndClear()
+	{
+		queue.clear();
+		defaultQueue.clear();
+		audioPlayer.stopTrack();
+		//current = null;
+	}
 
-        byte[] data = lastFrame != null ? lastFrame.getData() : null;
-        lastFrame = null;
+	public boolean isMusicPlaying(JDA jda)
+	{
+		return guild(jda).getSelfMember().getVoiceState().inVoiceChannel() && audioPlayer.getPlayingTrack()!=null;
+	}
 
-        return data;
-    }*/
-    
-    @Override
-    public boolean canProvide() 
-    {
-        lastFrame = audioPlayer.provide();
-        return lastFrame != null;
-    }
+	public Set<String> getVotes()
+	{
+		return votes;
+	}
 
-    @Override
-    public ByteBuffer provide20MsAudio() 
-    {
-        return ByteBuffer.wrap(lastFrame.getData());
-    }
+	public AudioPlayer getPlayer()
+	{
+		return audioPlayer;
+	}
 
-    @Override
-    public boolean isOpus() 
-    {
-        return true;
-    }
-    
-    
-    // Private methods
-    private Guild guild(JDA jda)
-    {
-        return jda.getGuildById(guildId);
-    }
+	public RequestMetadata getRequestMetadata()
+	{
+		if(audioPlayer.getPlayingTrack() == null)
+			return RequestMetadata.EMPTY;
+		RequestMetadata rm = audioPlayer.getPlayingTrack().getUserData(RequestMetadata.class);
+		return rm == null ? RequestMetadata.EMPTY : rm;
+	}
+
+	public boolean playFromDefault()
+	{
+		if(!defaultQueue.isEmpty())
+		{
+			audioPlayer.playTrack(defaultQueue.remove(0));
+			return true;
+		}
+		Settings settings = manager.getBot().getSettingsManager().getSettings(guildId);
+		if(settings==null || settings.getDefaultPlaylist()==null)
+			return false;
+
+		Playlist pl = manager.getBot().getPlaylistLoader().getPlaylist(settings.getDefaultPlaylist());
+		if(pl==null || pl.getItems().isEmpty())
+			return false;
+		pl.loadTracks(manager, (at) -> 
+		{
+			if(audioPlayer.getPlayingTrack()==null)
+				audioPlayer.playTrack(at);
+			else
+				defaultQueue.add(at);
+		}, () -> 
+		{
+			if(pl.getTracks().isEmpty() && !manager.getBot().getConfig().getStay())
+				manager.getBot().closeAudioConnection(guildId);
+		});
+		return true;
+	}
+
+	// Audio Events
+	@Override
+	public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) 
+	{
+		RepeatMode repeatMode = manager.getBot().getSettingsManager().getSettings(guildId).getRepeatMode();
+		// if the track ended normally, and we're in repeat mode, re-add it to the queue
+		if(endReason==AudioTrackEndReason.FINISHED)
+		{
+			addTrackIfRepeat(track);
+		}
+
+		if(queue.isEmpty())
+		{
+			if(!playFromDefault())
+			{
+				manager.getBot().getNowplayingHandler().onTrackUpdate(guildId, null, this);
+				if(!manager.getBot().getConfig().getStay())
+					manager.getBot().closeAudioConnection(guildId);
+				player.setPaused(false);
+			}
+		}
+		else
+		{
+			QueuedTrack qt = queue.pull();
+			player.playTrack(qt.getTrack());
+		}
+	}
+
+	@Override
+	public void onTrackStart(AudioPlayer player, AudioTrack track) 
+	{
+		votes.clear();
+		manager.getBot().getNowplayingHandler().onTrackUpdate(guildId, track, this);
+	}
+
+
+	// Formatting
+	public Message getNowPlaying(JDA jda, boolean includeProgress)
+	{
+		if(isMusicPlaying(jda))
+		{
+			Guild guild = guild(jda);
+			AudioTrack track = audioPlayer.getPlayingTrack();
+			MessageBuilder mb = new MessageBuilder();
+			mb.append(FormatUtil.filter(manager.getBot().getConfig().getSuccess()+" **Now Playing in "+guild.getSelfMember().getVoiceState().getChannel().getName()+"…**"));
+			EmbedBuilder eb = new EmbedBuilder();
+			eb.setColor(guild.getSelfMember().getColor());
+			RequestMetadata rm = getRequestMetadata();
+			if(rm.getOwner() != 0L)
+			{
+				User u = guild.getJDA().getUserById(rm.user.id);
+				if(u==null)
+					eb.setAuthor(rm.user.username + "#" + rm.user.discrim, null, rm.user.avatar);
+				else
+					eb.setAuthor(u.getName() + "#" + u.getDiscriminator(), null, u.getEffectiveAvatarUrl());
+			}
+
+			try 
+			{
+				eb.setTitle(track.getInfo().title, track.getInfo().uri);
+			}
+			catch(Exception e) 
+			{
+				eb.setTitle(track.getInfo().title);
+			}
+
+			if(track instanceof YoutubeAudioTrack && manager.getBot().getConfig().useNPImages())
+			{
+				eb.setThumbnail("https://img.youtube.com/vi/"+track.getIdentifier()+"/maxresdefault.jpg");
+			}
+
+			if(track.getInfo().author != null && !track.getInfo().author.isEmpty())
+				eb.setFooter("Source: " + track.getInfo().author, null);
+
+			if(includeProgress)
+			{
+				double progress = (double)audioPlayer.getPlayingTrack().getPosition()/track.getDuration();
+				eb.setDescription((audioPlayer.isPaused() ? JMusicBot.PAUSE_EMOJI : JMusicBot.PLAY_EMOJI)
+						+ " "+FormatUtil.progressBar(progress)
+						+ " `[" + TimeUtil.formatTime(track.getPosition()) + "/" + TimeUtil.formatTime(track.getDuration()) + "]` "
+						+ FormatUtil.volumeIcon(audioPlayer.getVolume()));
+			}
+			else
+				eb.setDescription(" `[" + TimeUtil.formatTime(track.getDuration()) + "]` "
+						+ FormatUtil.volumeIcon(audioPlayer.getVolume()));
+
+			return mb.setEmbed(eb.build()).build();
+		}
+		else return null;
+	}
+
+	public Message getNowPlaying(JDA jda)
+	{
+		return getNowPlaying(jda, true);
+	}
+
+	public Message getNoMusicPlaying(JDA jda)
+	{
+		Guild guild = guild(jda);
+		return new MessageBuilder()
+				.setContent(FormatUtil.filter(manager.getBot().getConfig().getSuccess()+" **Now Playing…**"))
+				.setEmbed(new EmbedBuilder()
+				.setTitle("No music playing")
+				.setDescription(JMusicBot.STOP_EMOJI+" "+FormatUtil.progressBar(-1)+" "+FormatUtil.volumeIcon(audioPlayer.getVolume()))
+				.setColor(guild.getSelfMember().getColor())
+				.build()).build();
+	}
+
+	public String getTopicFormat(JDA jda)
+	{
+		if(isMusicPlaying(jda))
+		{
+			long userid = getRequestMetadata().getOwner();
+			AudioTrack track = audioPlayer.getPlayingTrack();
+			String title = track.getInfo().title;
+			if(title==null || title.equals("Unknown Title"))
+				title = track.getInfo().uri;
+			return "**"+title+"** ["+(userid==0 ? "autoplay" : "<@"+userid+">")+"]"
+					+ "\n" + (audioPlayer.isPaused() ? JMusicBot.PAUSE_EMOJI : JMusicBot.PLAY_EMOJI) + " "
+					+ "[" + TimeUtil.formatTime(track.getDuration()) + "] "
+					+ FormatUtil.volumeIcon(audioPlayer.getVolume());
+		}
+		else return "No music playing " + JMusicBot.STOP_EMOJI + " " + FormatUtil.volumeIcon(audioPlayer.getVolume());
+	}
+
+	@Override
+	public boolean canProvide() 
+	{
+		lastFrame = audioPlayer.provide();
+		return lastFrame != null;
+	}
+
+	@Override
+	public ByteBuffer provide20MsAudio() 
+	{
+		return ByteBuffer.wrap(lastFrame.getData());
+	}
+
+	@Override
+	public boolean isOpus() 
+	{
+		return true;
+	}
+
+
+	// Private methods
+	private Guild guild(JDA jda)
+	{
+		return jda.getGuildById(guildId);
+	}
 }
